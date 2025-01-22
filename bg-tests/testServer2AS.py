@@ -30,7 +30,7 @@ def serverInit():
         sum1 = (sum1 + data[i]) % 255
         sum2 = (sum2 + sum1) % 255
 
-    calculated_checksum = (sum2 << 8) | sum1
+    calculated_checksum = (sum2 << 8) + sum1
 
     print(f"Calculated Checksum: {calculated_checksum}, Hex: {calculated_checksum:04x}")
 
