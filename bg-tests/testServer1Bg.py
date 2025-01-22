@@ -24,7 +24,6 @@ def serverInit():
     FCS = int.from_bytes(FCS)
     print(f'FCS: {FCS, type(FCS)},\nFCS: {hex(FCS)}, type {type(hex(FCS))}')
     
-        
 def placeholder():
     pass
 
