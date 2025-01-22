@@ -4,9 +4,9 @@ import random
 class MainClass():
     def __init__(self):
         self.s = sock.socket(sock.AF_INET, sock.SOCK_STREAM)       # Vælger TCP
-        self.s.connect(("34302.cyberteknologi.dk", 1062))          # Vælger host og port        
+        self.s.connect(("34302.cyberteknologi.dk", 1063))          # Vælger host og port        
         
-        self.checkSumValid = True
+        self.isRunning = True
         
     def recieveType(self, ):
         T = self.s.recv(1)            # Recv 1 byte til Typen
@@ -19,7 +19,7 @@ class MainClass():
         elif T == 2:
             pass
         # Data
-        elif T== 3:
+        elif T == 3:
             pass
 
     def handleServerhello(self, T):
@@ -100,11 +100,11 @@ class MainClass():
                 print(f'    calculated_checksum: {calculated_FCS}\n    FCS: {recieved_FCS}')
                 return True
         else:
-                self.checkSumValid == False
+                self.isRunning == False
                 print("GAME CRASHED DUE TO NETWORK! TRY AGAIN!")
                 self.s.close()   
                 return False
 
 client = MainClass()
 client.recieveType()
-# client.s.close()
+client.s.close()
