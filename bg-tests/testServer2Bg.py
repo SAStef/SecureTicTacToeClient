@@ -26,12 +26,15 @@ class MainClass():
         
         L = self.s.recv(1)            # Recv 1 byte til længden, L
         L = int.from_bytes(L)
+        # print(f'L: {L, type(L)}')
 
         g = self.s.recv(16)        # Recv 16 byte til tal g
         g = int.from_bytes(g)
+        # print(f'g: {g, type(g)}')
 
         p = self.s.recv(16)        # Recv 16 byte til tal g
         p = int.from_bytes(p)
+        # print(f'p: {p, type(p)}')
 
         A = self.s.recv(16)
         A = int.from_bytes(A)
@@ -71,11 +74,13 @@ class MainClass():
 
         print(f'L: {L}, B: {b}, L: {L}')
         # - Calculate FCS trailer
-        clienthello = T + L + b
-        print(f'CLIENTHELLO_ARRAY: {clienthello}')
-        FCS = self.calculateFCS(clienthello)
-        FCSr = FCS.to_bytes(2)
-        print(f'Calculated checksum: {FCSr}')
+        data = T + L + b
+        FCS = self.calculateFCS(data)                  # Denne metode returner en integer. Skal laves til et byte-array, for at kunne transmitteres
+        FCS_bytes = FCS.to_bytes(2)                         
+        print(f'Calculated checksum in bytes: {FCS_bytes}')
+        clienthello = data + FCS_bytes
+        print(f'Clienthello_array: {clienthello}')
+        # self.s.send(clienthello)
 
     def calculateFCS(self, data):
             sum1 = 0
@@ -104,4 +109,4 @@ class MainClass():
 
 client = MainClass()
 client.recieveType()
-client.s.close()
+# client.s.close()
