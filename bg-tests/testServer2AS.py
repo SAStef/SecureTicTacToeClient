@@ -31,6 +31,7 @@ def serverInit():
         sum2 = (sum2 + sum1) % 255
 
     calculated_checksum = (sum2 << 8) | sum1
+
     print(f"Calculated Checksum: {calculated_checksum}, Hex: {calculated_checksum:04x}")
 
     FCS_int = int.from_bytes(FCS, byteorder="big")
