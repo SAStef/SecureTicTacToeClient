@@ -23,7 +23,6 @@ class MainClass():
             pass
 
     def handleServerhello(self, T):
-        
         L = self.s.recv(1)            # Recv 1 byte til længden, L
         L = int.from_bytes(L)
         # print(f'L: {L, type(L)}')
@@ -40,12 +39,12 @@ class MainClass():
         A = int.from_bytes(A)
 
         FCS = self.s.recv(2)          # Recv 2 bytes til Frame Check Sequence (Altid 2 bytes)
-        FCSr = int.from_bytes(FCS)
+        FCS_int = int.from_bytes(FCS)
 
         data_byte_array = T.to_bytes(1) + L.to_bytes(1) + g.to_bytes(16) + p.to_bytes(16) + A.to_bytes(16)
         calculated_checksum = self.calculateFCS(data_byte_array)
         
-        self.checkFCS(calculated_checksum, FCSr)
+        self.checkFCS(calculated_checksum, FCS_int)
 
         # Udregner B, ved at vælge en filfældig b-værdi.
         b = random.getrandbits((8 * 16) - 2)                             # Denne funktion angiver nogle tilfældige bits. Derfor (8 * 16)-2, da det tilfældige tal skal være 2 lavere.
@@ -67,20 +66,23 @@ class MainClass():
         T = 2                    # Type 2 => CLIENTHELLO.
         T = T.to_bytes(1)        # Skal være 1 byte i længde.
 
-        b = B.to_bytes(16)      # Skal være 16 byte i længde.
+        B = B.to_bytes(16)      # Skal være 16 byte i længde.
 
-        L = len(b) + 2
+        L = len(B) + 2
         L = L.to_bytes(1)
 
-        print(f'L: {L}, B: {b}, L: {L}')
         # - Calculate FCS trailer
-        data = T + L + b
+        data = T + L + B
+        print(f'T: {T} L: {L}, B: {B}')         # Printer data, byte array uden FCS
+
         FCS = self.calculateFCS(data)                  # Denne metode returner en integer. Skal laves til et byte-array, for at kunne transmitteres
         FCS_bytes = FCS.to_bytes(2)                         
         print(f'Calculated checksum in bytes: {FCS_bytes}')
+        
         clienthello = data + FCS_bytes
         print(f'Clienthello_array: {clienthello}')
-        # self.s.send(clienthello)
+
+        self.s.send(clienthello)
 
     def calculateFCS(self, data):
             sum1 = 0
@@ -92,20 +94,16 @@ class MainClass():
             
             return calculated_checksum
             
-    def checkFCS(self, calculated_checksum, FCS):
-        if calculated_checksum == FCS:
+    def checkFCS(self, calculated_FCS, recieved_FCS):
+        if calculated_FCS == recieved_FCS:
                 print('FCS is valid:')
-                print(f'own_FCS: {calculated_checksum}\nFCS: {FCS}')
+                print(f'    calculated_checksum: {calculated_FCS}\n    FCS: {recieved_FCS}')
+                return True
         else:
                 self.checkSumValid == False
                 print("GAME CRASHED DUE TO NETWORK! TRY AGAIN!")
                 self.s.close()   
-        
-        
-
-
-    def isFCSValid(self, ):
-        pass
+                return False
 
 client = MainClass()
 client.recieveType()
