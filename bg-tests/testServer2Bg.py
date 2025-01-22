@@ -3,10 +3,18 @@ import random
 
 class MainClass():
     def __init__(self):
-        self.s = sock.socket(sock.AF_INET, sock.SOCK_STREAM)       # Vælger TCP
-        self.s.connect(("34302.cyberteknologi.dk", 1062))          # Vælger host og port        
-        
-        self.checkSumValid = True
+        try:
+            self.s = sock.socket(sock.AF_INET, sock.SOCK_STREAM)       # Vælger TCP
+            self.s.connect(("34302.cyberteknologi.dk", 1062))          # Vælger host og port        
+
+            self.isRunning = True
+
+            self.recieveType()
+            while self.isRunning:
+                self.recieveType()
+
+        except Exception as e:
+            print(f'Fejlen i __init__: {e}')
         
     def recieveType(self, ):
         T = self.s.recv(1)            # Recv 1 byte til Typen
@@ -15,12 +23,15 @@ class MainClass():
         # Serverhello
         if T == 1:                 
             self.handleServerhello(T)
+            print(f'T: {T}, Type: {type(T)}')
         # Clienthello
         elif T == 2:
-            pass
+            self.handleClienthello()
+            print(f'T: {T}, Type: {type(T)}')
         # Data
-        elif T== 3:
-            pass
+        elif T == 3:
+            self.handleData()
+            print(f'T: {T}, Type: {type(T)}')
 
     def handleServerhello(self, T):
         L = self.s.recv(1)            # Recv 1 byte til længden, L
@@ -54,10 +65,14 @@ class MainClass():
         self.sendClienthello(B)
 
     def handleClienthello(self, ):
-        pass
+        print(f'Serveren må ikke sende en clienthello. Lukker forbindelsen...')
+        self.isRunning = False
+        self.s.close()
 
     def handleData(self, ):
-        pass
+        print(f'Nu er vi nået til datapakken')
+        self.isRunning = False
+        self.s.close()
 
     def sendClienthello(self, B):
         # print(f'Printer B fra sendClientHello: {B}')
@@ -80,9 +95,12 @@ class MainClass():
         print(f'Calculated checksum in bytes: {FCS_bytes}')
         
         clienthello = data + FCS_bytes
+        # test_msg = "Hello, this is a test"
+        # self.s.send(test_msg.encode('utf-8'))
+        self.s.send(clienthello)
         print(f'Clienthello_array: {clienthello}')
 
-        self.s.send(clienthello)
+
 
     def calculateFCS(self, data):
             sum1 = 0
@@ -100,11 +118,11 @@ class MainClass():
                 print(f'    calculated_checksum: {calculated_FCS}\n    FCS: {recieved_FCS}')
                 return True
         else:
-                self.checkSumValid == False
+                self.isRunning == False
                 print("GAME CRASHED DUE TO NETWORK! TRY AGAIN!")
                 self.s.close()   
                 return False
 
 client = MainClass()
-client.recieveType()
+# client.recieveType()
 # client.s.close()
