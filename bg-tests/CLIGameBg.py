@@ -224,13 +224,12 @@ class ClientClass():
         # self.isRunning = False
         # self.s.close()
 
-
     def printBoardState(self, boardString:str, player:str):
         '''
         Denne funktion er hentet fra vores tidligere aflevering `kob-klient.py` til det første TTT projekt.
 
-        Denne funktion printer boardet ud i et brugervenligt format.
-        Den kræver en board for at fungere 
+        Funktion printer boardet ud i et brugervenligt format.
+        Den kræver en boardstring for at fungere 
         '''
         def printLine():
             '''
@@ -312,5 +311,3 @@ class ClientClass():
             _ = system('clear')
 
 client = ClientClass()
-# client.recieveType()
-# client.s.close()
