@@ -103,9 +103,10 @@ class MainClass():
             pass
 
         elif "BOARD IS" in serverstring:
-            pass
+            self.boardstate = serverstring
 
         if "YOUR TURN" in serverstring:
+            self.playerTurn()
             pass
 
         elif "WINS" in serverstring:
@@ -170,10 +171,10 @@ class MainClass():
                 return False
 
     def encryptDecrypt(self, data_payload):
-        if not hasattr(self, 'X') or self.X is None:          # Hvis ikke klassen har self.X eller hvis self.X er None
+        if not hasattr(self, 'X') or self.X == None:          # Hvis ikke klassen har self.X eller hvis self.X er None
             print(f'Initializing X the first time...')
-            self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!!
-            self.X = int.from_bytes(self.X)
+            self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!! Tager de 24 mindst betydende bits
+            self.X = int.from_bytes(self.X)                     # Skal være en integer for at kunne fungere i loopet
 
         a = 125      # Fixed værdi
         c = 1        # Fixed værdi
@@ -185,6 +186,36 @@ class MainClass():
             result[i] = data_payload[i] ^ keybyte
 
         return result
+
+    def playerTurn(self, ):
+        print(f'Skriv dit træk:')
+        playerinput = f'{input()}\r\n'
+        
+        chosen_move = bytearray()      # Tomt bytearray
+        chosen_move.extend(map(ord, playerinput))      # Fundet på stackoverflow: https://stackoverflow.com/questions/11624190/how-to-convert-string-to-byte-array-in-python
+        # playerinput.encode('utf-8')
+        print(playerinput, chosen_move)
+
+        T = 3                         # Typen er af data
+        T_bytes = T.to_bytes(1)       #
+        L = len(playerinput) + 2
+        L_bytes = L.to_bytes(1)
+
+        data = T_bytes + L_bytes + chosen_move
+        FCS = self.calculateFCS(data)
+        FCS_bytes = FCS.to_bytes(2)
+
+        til_krypt = chosen_move + FCS_bytes
+
+        encrypted_payload = self.encryptDecrypt(til_krypt)
+
+        til_send = T_bytes + L_bytes + encrypted_payload
+
+        # data_sent = data + FCS_bytes
+        self.s.send(til_send)
+        
+        # self.isRunning = False
+        # self.s.close()
 
 client = MainClass()
 # client.recieveType()
