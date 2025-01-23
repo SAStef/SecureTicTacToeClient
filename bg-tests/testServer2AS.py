@@ -34,6 +34,7 @@ class MainClass():
             print(f'T: {T}, Type: {type(T)}')
 
     def handleServerhello(self, T):
+        
         L_bytes = self.s.recv(1)            # Recv 1 byte til længden, L
         L = int.from_bytes(L_bytes)
         # print(f'L: {L, type(L)}')
@@ -64,14 +65,12 @@ class MainClass():
         # Udregner B, ved at vælge en filfældig b-værdi.
         b = random.getrandbits((8 * 16) - 2)                             # Denne funktion angiver nogle tilfældige bits. Derfor (8 * 16)-2, da det tilfældige tal skal være 2 lavere.
         B = pow(g, b, p)
-        K = pow(g, A*b, p)
+        self.K = pow(g, A*b, p)
         
-        print(f"K VÆRDIEN ER::::______  _ __ _ {K}")
+        print(f"K VÆRDIEN ER::::______  _ __ _ {self.K}")
         
         print(f'B: {B}')
         self.sendClienthello(B)
-        
-        return K
 
     def handleClienthello(self, ):
         print(f'Serveren må ikke sende en clienthello. Lukker forbindelsen...')
