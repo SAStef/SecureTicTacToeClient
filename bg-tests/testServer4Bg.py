@@ -68,42 +68,49 @@ class MainClass():
 
         self.sendClienthello(B)
 
-    def handleData(self, T):
-        if not hasattr(self, 'X') or self.X is None:          # Hvis ikke klassen har self.X eller hvis self.X er None
-            print(f'Initializing X the first time...')
-            self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!!
-            self.X = int.from_bytes(self.X)
-        
-        print(f'    self.X: {self.X}')
+    def handleData(self, T):        
+        # print(f'    self.X: {self.X}')
         L_bytes = self.s.recv(1)
         L_int = int.from_bytes(L_bytes)                # Længden i bytes. Ex L_int = 18 => 18 bytes.
 
         payload = self.s.recv(L_int)
 
-        # print(f'L_bytes: {L_bytes}, L_int: {L_int}')
-
-        # print(f'self.X: {self.X}, Type: {type(self.X)}')
         # [print(hex(byte)+" ") for byte in X]
 
-        # Definerer det krypterede bytearray
-        # print(f'Payload {payload}')
-
-        # X = int.from_bytes(self.X)
-        a = 125
-        c = 1
-        result = bytearray(len(payload))
-        for i in range(len(payload)):
-            self.X = (a * self.X + c) % (2**24)
-            keybyte = self.X.to_bytes(3)[1]                  # Tager den midterste byte, som en keybite
-            result[i] = payload[i] ^ keybyte
+        result = self.encryptDecrypt(payload)
         
-        firstline = result[:-2]                         # Board state
-        data = T.to_bytes(1) + L_bytes + firstline          # Skal bruges til at udregne FCS.
-        recieved_FCS = int.from_bytes(result[-2:])          # Recieved FCS som en integer
-        print(f'firstline: {firstline}')
 
+        # Bruger serverens sendte data til at udregne FCS osv.
+        firstline_bytes = result[:-2]                         # Board state
+        data = T.to_bytes(1) + L_bytes + firstline_bytes          # Skal bruges til at udregne FCS.
+        recieved_FCS = int.from_bytes(result[-2:])          # Recieved FCS som en integer
+
+
+        firstline = str(firstline_bytes)
+
+        # print(f'firstline_bytes: {firstline_bytes}, type: {firstline_bytes}')
+        # print(f'firstline: {firstline}, type: {type(firstline)}')
+        
+        serverstring = firstline[12:-2]        # Laver en string, hvor jeg slicer fra 12 og fjerne de sidste to elementer
+        print(f'serverstring: {serverstring}')
+        
         own_FCS = self.calculateFCS(data)
         self.checkFCS(own_FCS, recieved_FCS)
+
+
+        # Vælger hvad der skal ske alt efter hvad serverstring er:
+        if "ILLEGAL" in serverstring:
+            pass
+
+        elif "BOARD IS" in serverstring:
+            pass
+
+        if "YOUR TURN" in serverstring:
+            pass
+
+        elif "WINS" in serverstring:
+            self.isRunning = False
+            self.s.close()
 
         # self.s.send(data)
         
@@ -161,6 +168,23 @@ class MainClass():
                 print("GAME CRASHED DUE TO NETWORK! TRY AGAIN!")
                 self.s.close()   
                 return False
+
+    def encryptDecrypt(self, data_payload):
+        if not hasattr(self, 'X') or self.X is None:          # Hvis ikke klassen har self.X eller hvis self.X er None
+            print(f'Initializing X the first time...')
+            self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!!
+            self.X = int.from_bytes(self.X)
+
+        a = 125      # Fixed værdi
+        c = 1        # Fixed værdi
+        
+        result = bytearray(len(data_payload))
+        for i in range(len(data_payload)):
+            self.X = (a * self.X + c) % (2**24)
+            keybyte = self.X.to_bytes(3)[1]            # Laver self.X til 3 bytes, og udvælger den midterste
+            result[i] = data_payload[i] ^ keybyte
+
+        return result
 
 client = MainClass()
 # client.recieveType()
