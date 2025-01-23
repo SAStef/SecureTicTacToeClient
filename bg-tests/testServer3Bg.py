@@ -33,7 +33,7 @@ class MainClass():
         # Data
         elif T == 3:
             print(f'T: {T}, Header: DATA')
-            self.handleData()
+            self.handleData(T)
 
     def handleServerhello(self, T):
         L = self.s.recv(1)            # Recv 1 byte til længden, L
@@ -69,37 +69,49 @@ class MainClass():
 
         # Denne bruges til handleData
         # Initiering af X lige efter diffe hellman
-        self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!!
 
         self.sendClienthello(B)
 
-    def handleData(self, ):
+    def handleData(self, T):
+        if not hasattr(self, 'X') or self.X is None:          # Hvis ikke klassen har self.X eller hvis self.X er None
+            print(f'Initializing X the first time...')
+            self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!!
+            self.X = int.from_bytes(self.X)
+        
         L_bytes = self.s.recv(1)
         L_int = int.from_bytes(L_bytes)                # Længden i bytes. Ex L_int = 18 => 18 bytes.
 
         payload = self.s.recv(L_int)
 
-        print(f'L_bytes: {L_bytes}, L_int: {L_int}')
+        # print(f'L_bytes: {L_bytes}, L_int: {L_int}')
 
-        print(f'self.X: {self.X}, Type: {type(self.X)}')
+        # print(f'self.X: {self.X}, Type: {type(self.X)}')
         # [print(hex(byte)+" ") for byte in X]
 
         # Definerer det krypterede bytearray
-        print(f'Payload {payload}')
+        # print(f'Payload {payload}')
 
-        X = int.from_bytes(self.X)
+        # X = int.from_bytes(self.X)
         a = 125
         c = 1
         result = bytearray(len(payload))
         for i in range(len(payload)):
-            X = (a * X + c) % (2**24)
-            keybyte = X.to_bytes(3)[1]                  # Tager den midterste byte, som en keybite
+            self.X = (a * self.X + c) % (2**24)
+            keybyte = self.X.to_bytes(3)[1]                  # Tager den midterste byte, som en keybite
             result[i] = payload[i] ^ keybyte
         
-        print(result)
+        firstline = result[:-2]                         # Board state
+        data = T.to_bytes(1) + L_bytes + firstline          # Skal bruges til at udregne FCS.
+        recieved_FCS = int.from_bytes(result[-2:])          # Recieved FCS som en integer
+        print(f'firstline: {firstline}')
+
+        own_FCS = self.calculateFCS(data)
+        self.checkFCS(own_FCS, recieved_FCS)
+
+        # self.s.send(data)
         
-        self.isRunning = False
-        self.s.close()
+        # self.isRunning = False
+        # self.s.close()
 
     def sendClienthello(self, B):
         # print(f'Printer B fra sendClientHello: {B}')
@@ -140,7 +152,7 @@ class MainClass():
                 sum2 = (sum2 + sum1) % 255
             calculated_checksum = (sum2 << 8) + sum1
             
-            return calculated_checksum
+            return calculated_checksum            # Returnerer en integer
             
     def checkFCS(self, calculated_FCS, recieved_FCS):
         if calculated_FCS == recieved_FCS:
