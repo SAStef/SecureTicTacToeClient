@@ -25,19 +25,19 @@ class ServerWorker(QThread):
             self.s = sock.socket(sock.AF_INET, sock.SOCK_STREAM)
             self.s.connect((self.host, self.port))
 
-            self.initCryptHandshake()
+            self.initCryptHandshake() # initialiserer two-way handshake og enkryption mellem klient og server
 
             while self.isRunning:
-                self.handleData()
+                self.handleData() #derefter kører handleData som enten sender data eller modtager, hvorledes T=3
 
         except Exception as e:
             print(f"Fejlen i __init__: {e}")
-            traceback.print_exc()
+            traceback.print_exc() # printer fejlen
         except Exception as e:
-            self.statusUpdated.emit(f"Error: {e}")
+            self.statusUpdated.emit(f"Error: {e}") # for at fejlen kan komme op på QLabel
         finally:
             if self.s:
-                self.s.close()
+                self.s.close() #afslut efter processen er done (hvis man lukker siden osv.)
 
     def initCryptHandshake(self):  # modtager hello (1st hand in handshake) fra server
         T = self.s.recv(1)
@@ -58,7 +58,7 @@ class ServerWorker(QThread):
         FCS = self.s.recv(2)
         FCS_int = int.from_bytes(FCS)
 
-        data_byte_array = (
+        data_byte_array = ( 
             T.to_bytes(1)
             + L.to_bytes(1)
             + g.to_bytes(16)
@@ -134,7 +134,7 @@ class ServerWorker(QThread):
             T_send = T.to_bytes(1)
 
             player_input_send = bytearray()
-            player_input_send.extend(map(ord, str(move)))
+            player_input_send.extend(map(ord, str(move))) # laver bytearray for at kunne sende string
             L = len(player_input_send) + 2
             L_send = L.to_bytes(1)
 
