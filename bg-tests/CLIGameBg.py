@@ -1,8 +1,9 @@
 import socket as sock
 import random
 import traceback             # Debugging
+from os import system, name
 
-class MainClass():
+class ClientClass():
     def __init__(self):
         try:
             self.s = sock.socket(sock.AF_INET, sock.SOCK_STREAM)       # Vælger TCP
@@ -10,12 +11,11 @@ class MainClass():
 
             self.isRunning = True
 
-            self.recieveType()
             while self.isRunning:
                 self.recieveType()
 
         except Exception as e:
-            print(f'Fejlen i __init__: {e}')
+            print(f'Fejl i __init__: {e}')
             traceback.print_exc()
         
     def recieveType(self, ):
@@ -24,15 +24,15 @@ class MainClass():
 
         # Serverhello
         if T == 1:                 
-            print(f'T: {T}, Header: SERVERHELLO')
+            # print(f'T: {T}, Header: SERVERHELLO')
             self.handleServerhello(T)
         # Clienthello
         elif T == 2:
-            print(f'T: {T}, Header: CLIENTHELLO')
+            # print(f'T: {T}, Header: CLIENTHELLO')
             self.handleClienthello()
         # Data
         elif T == 3:
-            print(f'T: {T}, Header: DATA')
+            # print(f'T: {T}, Header: DATA')
             self.handleData(T)
 
     def handleServerhello(self, T):
@@ -92,7 +92,7 @@ class MainClass():
         # print(f'firstline: {firstline}, type: {type(firstline)}')
         
         serverstring = firstline[12:-2]        # Laver en string, hvor jeg slicer fra 12 og fjerne de sidste to elementer
-        print(f'serverstring: {serverstring}')
+        # print(f'serverstring: {serverstring}')
         
         own_FCS = self.calculateFCS(data)
         self.checkFCS(own_FCS, recieved_FCS)
@@ -100,16 +100,22 @@ class MainClass():
 
         # Vælger hvad der skal ske alt efter hvad serverstring er:
         if "ILLEGAL" in serverstring:
-            pass
+            self.printBoardState(self.newestBoard, self.playerIs)
 
         elif "BOARD IS" in serverstring:
-            self.boardstate = serverstring
+            self.newestBoard = serverstring.strip()[-9:]
+            self.printBoardState(self.newestBoard, self.playerIs)
+
+        if "PLAYER IS" in serverstring:
+            self.playerIs = "Player is: " + str(serverstring[-1])
 
         if "YOUR TURN" in serverstring:
             self.playerTurn()
+            self.clear()
             pass
 
         elif "WINS" in serverstring:
+            print(serverstring)
             self.isRunning = False
             self.s.close()
 
@@ -161,8 +167,8 @@ class MainClass():
             
     def checkFCS(self, calculated_FCS, recieved_FCS):
         if calculated_FCS == recieved_FCS:
-                print('FCS is valid:')
-                print(f'    calculated_checksum: {calculated_FCS}\n    FCS: {recieved_FCS}')
+                # print('FCS is valid:')
+                # print(f'    calculated_checksum: {calculated_FCS}\n    FCS: {recieved_FCS}')
                 return True
         else:
                 self.isRunning == False
@@ -172,7 +178,7 @@ class MainClass():
 
     def encryptDecrypt(self, data_payload):
         if not hasattr(self, 'X') or self.X == None:          # Hvis ikke klassen har self.X eller hvis self.X er None
-            print(f'Initializing X the first time...')
+            print(f'Connection established over TTTPS (TicTacToeProtocolSecure) 🔒...')
             self.X = self.K.to_bytes(16)[13:16]                 # Skal kun initlialiseres 1 gang !!!!!!!! Tager de 24 mindst betydende bits
             self.X = int.from_bytes(self.X)                     # Skal være en integer for at kunne fungere i loopet
 
@@ -188,17 +194,18 @@ class MainClass():
         return result
 
     def playerTurn(self, ):
-        print(f'Skriv dit træk:')
+        print(f'Enter your move (1-9):')
         playerinput = f'{input()}\r\n'
         
         chosen_move = bytearray()      # Tomt bytearray
         chosen_move.extend(map(ord, playerinput))      # Fundet på stackoverflow: https://stackoverflow.com/questions/11624190/how-to-convert-string-to-byte-array-in-python
         # playerinput.encode('utf-8')
-        print(playerinput, chosen_move)
+        # print(playerinput, chosen_move)
 
         T = 3                         # Typen er af data
         T_bytes = T.to_bytes(1)       #
-        L = len(playerinput) + 2
+        # L = len(playerinput) + 2
+        L = len(chosen_move) + 2
         L_bytes = L.to_bytes(1)
 
         data = T_bytes + L_bytes + chosen_move
@@ -217,6 +224,90 @@ class MainClass():
         # self.isRunning = False
         # self.s.close()
 
-client = MainClass()
-# client.recieveType()
-# client.s.close()
+    def printBoardState(self, boardString:str, player:str):
+        '''
+        Denne funktion er hentet fra vores tidligere aflevering `kob-klient.py` til det første TTT projekt.
+
+        Funktion printer boardet ud i et brugervenligt format.
+        Den kræver en boardstring for at fungere 
+        '''
+        def printLine():
+            '''
+            Laver linjen mellem cellerne
+            '''
+            print("+--------"*størelsePåBoard+"+")     
+        størelsePåBoard=3
+            
+        Xlist = [
+            "#   #", 
+            " # # ", 
+            "  #  ", 
+            " # # ", 
+            "#   #"]
+        Olist = [
+            " ### ", 
+            "#   #", 
+            "#   #", 
+            "#   #", 
+            " ### "]
+        emptyList=[
+            "     ", 
+            "     ", 
+            "     ", 
+            "     ", 
+            "     "]
+        #printer spillerens tegn
+        print(player)
+        
+        for lines in range(størelsePåBoard):
+            printLine()
+            
+            for cellLinje in range(5):
+                
+                for cellKolonne in range (størelsePåBoard):
+                    
+                    print("|", end="")  # Vi printer den venstre væg i en celle på den nuværende linje
+                                        # Vi tilføjer end="", fordi vores print statements ikke skal lave en ny linje.
+                    
+                    #hvis førstelinje i en celle så skriv tallet i venstre hjørne
+                    if cellLinje == 0:
+                        print(f"{1+lines*3+cellKolonne} ", end="")
+                    else:
+                        print("  ", end="")
+                        
+                    # nu skriver vi en linje af den relavnate karakter ind i ccellen
+                        
+                    if boardString[lines*3+cellKolonne] == "X": #hvis den nuværende celle indholder X
+                        print(Xlist[cellLinje], end = "")
+                        
+                    elif boardString[lines*3+cellKolonne] == "O":  #hvis den nuværende celle indholder O
+                        print(Olist[cellLinje], end = "")
+                        
+                    else:  #hvis den nuværende celle indholder . 
+                        print(emptyList[cellLinje], end = "")  
+                        
+                    #ekstra mellemrum til højre i hver celle      
+                    print(" ", end = "")
+                    
+                #lave den højre væg    
+                print("|")
+                
+        #lav den nederste linje        
+        printLine()
+        
+
+    def clear(self, ):
+        '''
+        Denne funkion rydder terminalen
+        tyv stjålet fra: https://www.geeksforgeeks.org/clear-screen-python/
+        '''
+
+        # Hvis terminalen er Windows
+        if name == 'nt':
+            _ = system('cls')
+
+        # Hvis terminalen er Mac eller Linux (here, os.name is 'posix')
+        else:
+            _ = system('clear')
+
+client = ClientClass()
